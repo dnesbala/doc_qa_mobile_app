@@ -25,42 +25,88 @@ class _HomeScreenState extends State<HomeScreen> {
   int _currentInputLineCount = 1;
   String? selectedFilePath;
 
+  late final ScrollController _scrollController;
+  bool _showScrollToBottomButton = false;
+
   @override
   void initState() {
     _promptTextController = TextEditingController();
+    _scrollController = ScrollController();
+
+    _scrollController.addListener(() {
+      final isAtBottom = _scrollController.position.atEdge &&
+          _scrollController.position.pixels ==
+              _scrollController.position.maxScrollExtent;
+
+      setState(() {
+        _showScrollToBottomButton = !isAtBottom;
+      });
+    });
+
     super.initState();
   }
 
   @override
   void dispose() {
     _promptTextController.dispose();
+    _scrollController.dispose();
     super.dispose();
+  }
+
+  void _scrollToBottom() {
+    _scrollController.animateTo(
+      _scrollController.position.maxScrollExtent,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOut,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       resizeToAvoidBottomInset: true,
-      body: Column(
+      body: Stack(
         children: [
-          CustomAppBar(
-            title: AppStrings.appTitle,
-            onMenuTap: () {},
+          Column(
+            children: [
+              CustomAppBar(
+                title: AppStrings.appTitle,
+                onMenuTap: () {},
+              ),
+              Expanded(
+                child: SingleChildScrollView(
+                  controller: _scrollController,
+                  child: Column(
+                    children: [
+                      if (selectedFilePath == null) ...{
+                        SizedBox(
+                            height: MediaQuery.sizeOf(context).height * .25),
+                        _emptyChatUploadDocPlaceholder()
+                      } else
+                        _fileUploadedInitialWidget(),
+                    ],
+                  ),
+                ),
+              ),
+              _promptInputFieldWithUploadDoc(),
+              const SizedBox(height: 16),
+            ],
           ),
-          Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  if (selectedFilePath == null)
-                    _emptyChatUploadDocPlaceholder()
-                  else
-                    _fileUploadedInitialWidget(),
-                ],
+          if (_showScrollToBottomButton)
+            Positioned(
+              bottom: _currentInputLineCount == 1
+                  ? 80
+                  : _currentInputLineCount * 32,
+              right: 16,
+              child: FloatingActionButton(
+                onPressed: _scrollToBottom,
+                mini: true,
+                tooltip: "Scroll to bottom",
+                backgroundColor: AppColors.primaryColor.withOpacity(0.5),
+                child: const Icon(Icons.arrow_downward_outlined,
+                    color: Colors.white),
               ),
             ),
-          ),
-          _promptInputFieldWithUploadDoc(),
-          const SizedBox(height: 16),
         ],
       ),
     );
