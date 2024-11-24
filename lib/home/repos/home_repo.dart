@@ -35,7 +35,7 @@ class HomeRepoImpl implements HomeRepo {
       {required int documentId, required String prompt}) async {
     try {
       final response = await _apiService.post(
-        AppStrings.uploadDocumentApi,
+        AppStrings.submitPromptApi,
         {
           "document_id": documentId,
           "question": prompt,

@@ -3,4 +3,5 @@ class AppStrings {
 
   // API Constants
   static const String uploadDocumentApi = "/upload/";
+  static const String submitPromptApi = "/ask/";
 }

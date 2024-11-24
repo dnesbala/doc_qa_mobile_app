@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:doc_qa_flutter_app/common/extensions/list_extensions.dart';
 import 'package:doc_qa_flutter_app/common/utils/toast_utils.dart';
 import 'package:doc_qa_flutter_app/common/widgets/history_drawer.dart';
 import 'package:doc_qa_flutter_app/common/widgets/loader.dart';
@@ -30,6 +31,7 @@ class _HomeScreenState extends State<HomeScreen> {
   late final TextEditingController _promptTextController;
   int _currentInputLineCount = 1;
   String? selectedFilePath;
+  int? documentId;
 
   late final ScrollController _scrollController;
   bool _showScrollToBottomButton = false;
@@ -37,6 +39,7 @@ class _HomeScreenState extends State<HomeScreen> {
   DateTime? _backPressDateTime;
 
   List<(String, String)> questionAnswers = [];
+  bool _isAnswerLoading = false;
 
   @override
   void initState() {
@@ -65,11 +68,15 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _scrollToBottom() {
-    _scrollController.animateTo(
-      _scrollController.position.maxScrollExtent,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeOut,
-    );
+    if (_scrollController.hasClients) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      });
+    }
   }
 
   @override
@@ -101,16 +108,25 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 BlocListener<SubmitPromptBloc, SubmitPromptState>(
                   listener: (context, state) {
-                    if (state is SubmitPromptSuccess) {
-                      questionAnswers.add((
-                        _promptTextController.text,
-                        state.answer.details?.answer ?? ""
-                      ));
+                    if (state is SubmitPromptInProgress) {
+                      _isAnswerLoading = true;
+                      setState(() {});
+                    } else if (state is SubmitPromptSuccess) {
+                      _isAnswerLoading = false;
+                      updateAnswer(state.answer.details?.question ?? "",
+                          state.answer.details?.answer ?? "");
+                      setState(() {});
+                      _scrollToBottom();
+                    } else if (state is SubmitPromptFailure) {
+                      _isAnswerLoading = false;
+                      setState(() {});
                     }
                   },
                   child: BlocConsumer<UploadDocBloc, UploadDocState>(
                       listener: (context, state) {
-                    if (state is UploadDocFailure) {
+                    if (state is UploadDocSuccess) {
+                      documentId = state.response.details?.id;
+                    } else if (state is UploadDocFailure) {
                       showErrorToast(description: state.errorMessage);
                     }
                   }, builder: (context, state) {
@@ -221,11 +237,15 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
           ),
-          ...questionAnswers.map(
-            ((String, String) qa) => Column(
+          ...questionAnswers.mapWithIndex(
+            ((String, String) qa, int index) => Column(
               children: [
                 _userQuestionBox(prompt: qa.$1),
-                _docQaAnswerBox(answer: qa.$2),
+                _docQaAnswerBox(
+                    answer: qa.$2,
+                    isLoading: questionAnswers.length == index + 1
+                        ? _isAnswerLoading
+                        : false),
               ],
             ),
           ),
@@ -250,6 +270,9 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(width: 16),
           Expanded(
             child: TextField(
+              onTap: () {
+                _scrollToBottom();
+              },
               autofocus: false,
               controller: _promptTextController,
               onChanged: (String val) {
@@ -279,12 +302,25 @@ class _HomeScreenState extends State<HomeScreen> {
             transitionBuilder: (Widget child, Animation<double> animation) {
               return FadeTransition(opacity: animation, child: child);
             },
-            child: _promptTextController.text.isNotEmpty
+            child: _promptTextController.text.trim().isNotEmpty
                 ? Row(
                     children: [
                       const SizedBox(width: 16),
                       CustomInkWell(
-                        onTap: () {},
+                        onTap: () {
+                          if (documentId != null) {
+                            FocusScope.of(context).unfocus();
+                            context
+                                .read<SubmitPromptBloc>()
+                                .add(StartSubmitPrompt(
+                                  docId: documentId!,
+                                  prompt: _promptTextController.text,
+                                ));
+                            addQuestion(_promptTextController.text);
+                            _promptTextController.clear();
+                            _scrollToBottom();
+                          }
+                        },
                         tooltipMessage: "Submit Prompt",
                         child: const Icon(Icons.send_outlined),
                       ),
@@ -409,6 +445,19 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     } else {
       SystemNavigator.pop();
+    }
+  }
+
+  void addQuestion(String question) {
+    questionAnswers.add((question, ""));
+  }
+
+  void updateAnswer(String question, String answer) {
+    for (int i = 0; i < questionAnswers.length; i++) {
+      if (questionAnswers[i].$1 == question) {
+        questionAnswers[i] = (question, answer);
+        break;
+      }
     }
   }
 
