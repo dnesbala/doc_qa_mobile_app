@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 class ApiService {
   final Dio dio = Dio();
 
-  final String baseUrl = "https://api-endpoint.com";
+  final String baseUrl = "https://prabaldeshar-chatbot.serveo.net/api";
 
   ApiService() {
     dio.options.baseUrl = baseUrl;
@@ -73,7 +73,7 @@ class ApiService {
       if (statusCode == 1) {
         return response;
       } else {
-        _handleError(response.data["status-message"] ?? "Something Went Wrong");
+        _handleError(response.data["message"] ?? "Something Went Wrong");
       }
     } else {
       _handleError("Something Went Wrong");
@@ -82,23 +82,25 @@ class ApiService {
 
   Future<Response> _handleError(dynamic error) async {
     if (error is DioException) {
+      final errorMessage = error.response?.data["message"];
       switch (error.type) {
         case DioExceptionType.connectionTimeout:
-          throw Exception("Connection Timeout");
+          throw Exception(errorMessage ?? "Connection Timeout");
         case DioExceptionType.sendTimeout:
-          throw Exception("Send Timeout");
+          throw Exception(errorMessage ?? "Send Timeout");
         case DioExceptionType.receiveTimeout:
-          throw Exception("Receive Timeout");
+          throw Exception(errorMessage ?? "Receive Timeout");
         case DioExceptionType.badResponse:
-          throw Exception("Invalid response: ${error.response?.statusCode}");
+          throw Exception(errorMessage ??
+              "Invalid response: ${error.response?.statusCode}");
         case DioExceptionType.cancel:
-          throw Exception("Request Cancelled");
+          throw Exception(errorMessage ?? "Request Cancelled");
         case DioExceptionType.badCertificate:
-          throw Exception("Bad Certificate");
+          throw Exception(errorMessage ?? "Bad Certificate");
         case DioExceptionType.connectionError:
-          throw Exception("Connection Error");
+          throw Exception(errorMessage ?? "Connection Error");
         case DioExceptionType.unknown:
-          throw Exception("Something Went Wrong");
+          throw Exception(errorMessage ?? "Something Went Wrong");
       }
     } else {
       throw Exception(error);

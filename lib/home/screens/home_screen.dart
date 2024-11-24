@@ -1,11 +1,16 @@
 import 'dart:io';
 
 import 'package:doc_qa_flutter_app/common/utils/toast_utils.dart';
+import 'package:doc_qa_flutter_app/common/widgets/history_drawer.dart';
+import 'package:doc_qa_flutter_app/common/widgets/loader.dart';
 import 'package:doc_qa_flutter_app/config/constants/app_colors.dart';
 import 'package:doc_qa_flutter_app/config/constants/app_strings.dart';
+import 'package:doc_qa_flutter_app/home/blocs/submit_prompt/submit_prompt_bloc.dart';
+import 'package:doc_qa_flutter_app/home/blocs/upload_doc/upload_doc_bloc.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_pdfview/flutter_pdfview.dart';
 import 'package:lottie/lottie.dart';
 
@@ -30,6 +35,8 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _showScrollToBottomButton = false;
 
   DateTime? _backPressDateTime;
+
+  List<(String, String)> questionAnswers = [];
 
   @override
   void initState() {
@@ -75,33 +82,65 @@ class _HomeScreenState extends State<HomeScreen> {
       },
       child: Scaffold(
         resizeToAvoidBottomInset: true,
+        drawer: const HistoryDrawer(
+          history: [],
+        ),
         body: Stack(
           children: [
             Column(
               children: [
-                CustomAppBar(
-                  title: AppStrings.appTitle,
-                  onMenuTap: () {},
+                Builder(
+                  builder: (context) {
+                    return CustomAppBar(
+                      title: AppStrings.appTitle,
+                      onMenuTap: () {
+                        Scaffold.of(context).openDrawer();
+                      },
+                    );
+                  },
                 ),
-                Expanded(
-                  child: SingleChildScrollView(
-                    controller: _scrollController,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (selectedFilePath == null) ...{
-                          Center(
-                            heightFactor: 3,
-                            child: _emptyChatUploadDocPlaceholder(),
-                          ),
-                        } else
-                          _fileUploadedInitialWidget(),
-                      ],
-                    ),
-                  ),
+                BlocListener<SubmitPromptBloc, SubmitPromptState>(
+                  listener: (context, state) {
+                    if (state is SubmitPromptSuccess) {
+                      questionAnswers.add((
+                        _promptTextController.text,
+                        state.answer.details?.answer ?? ""
+                      ));
+                    }
+                  },
+                  child: BlocConsumer<UploadDocBloc, UploadDocState>(
+                      listener: (context, state) {
+                    if (state is UploadDocFailure) {
+                      showErrorToast(description: state.errorMessage);
+                    }
+                  }, builder: (context, state) {
+                    if (state is UploadDocInProgress) {
+                      return const Expanded(
+                        child: Loader(),
+                      );
+                    } else if (state is UploadDocSuccess) {
+                      return Expanded(
+                        child: Column(
+                          children: [
+                            Expanded(
+                              child: SingleChildScrollView(
+                                controller: _scrollController,
+                                child: _fileUploadedInitialWidget(),
+                              ),
+                            ),
+                            if (selectedFilePath != null)
+                              _promptInputFieldWithUploadDoc(),
+                            const SizedBox(height: 16),
+                          ],
+                        ),
+                      );
+                    } else if (state is UploadDocFailure) {}
+                    return Center(
+                      heightFactor: 3,
+                      child: _emptyChatUploadDocPlaceholder(),
+                    );
+                  }),
                 ),
-                if (selectedFilePath != null) _promptInputFieldWithUploadDoc(),
-                const SizedBox(height: 16),
               ],
             ),
             if (_showScrollToBottomButton)
@@ -156,43 +195,40 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Column(
         children: [
           const SizedBox(height: 16),
-          _userQuestionBox(prompt: "Uploaded Doc:", pdfView: true),
+          _userQuestionBox(
+              prompt: "Uploaded Doc ✅",
+              pdfView: selectedFilePath?.endsWith(".pdf") ?? false),
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 500),
             transitionBuilder: (Widget child, Animation<double> animation) {
               return FadeTransition(opacity: animation, child: child);
             },
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: Colors.grey.shade200,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                child: Text("Ask something about the document..",
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodyMedium
-                        ?.copyWith(color: AppColors.lightTextColor)),
-              ),
+            child: questionAnswers.isNotEmpty
+                ? const SizedBox.shrink()
+                : DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade200,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 4),
+                      child: Text("Ask something about the document..",
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
+                              ?.copyWith(color: AppColors.lightTextColor)),
+                    ),
+                  ),
+          ),
+          ...questionAnswers.map(
+            ((String, String) qa) => Column(
+              children: [
+                _userQuestionBox(prompt: qa.$1),
+                _docQaAnswerBox(answer: qa.$2),
+              ],
             ),
           ),
-          _userQuestionBox(prompt: "test question here?", pdfView: false),
-          _docQaAnswerBox(answer: "lkorem ipsum test sajfk"),
-          _userQuestionBox(prompt: "test question here?", pdfView: false),
-          _docQaAnswerBox(
-              answer:
-                  "lkorem ipsum test sajfk lkorem ipsum test sajfk lkorem ipsum test sajfk lkorem ipsum test sajfk lkorem ipsum test sajfk lkorem ipsum test sajfk"),
-          _docQaAnswerBox(
-              answer:
-                  "lkorem ipsum test sajfk lkorem ipsum test sajfk lkorem ipsum test sajfk lkorem ipsum test sajfk lkorem ipsum test sajfk lkorem ipsum test sajfk"),
-          _docQaAnswerBox(
-              answer:
-                  "lkorem ipsum test sajfk lkorem ipsum test sajfk lkorem ipsum test sajfk lkorem ipsum test sajfk lkorem ipsum test sajfk lkorem ipsum test sajfk"),
-          _docQaAnswerBox(
-              answer:
-                  "lkorem ipsum test sajfk lkorem ipsum test sajfk lkorem ipsum test sajfk lkorem ipsum test sajfk lkorem ipsum test sajfk lkorem ipsum test sajfk"),
           const SizedBox(height: 24),
         ],
       ),
@@ -214,6 +250,7 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(width: 16),
           Expanded(
             child: TextField(
+              autofocus: false,
               controller: _promptTextController,
               onChanged: (String val) {
                 _updateLineCount(val);
@@ -378,13 +415,16 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _uploadFile() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
-      allowedExtensions: ['pdf'],
+      allowedExtensions: ['pdf', 'txt'],
     );
     if (result != null) {
       File file = File(result.files.single.path!);
       setState(() {
         selectedFilePath = file.path;
       });
+      context
+          .read<UploadDocBloc>()
+          .add(StartUploadDocument(docPath: selectedFilePath!));
     } else {
       showErrorToast(description: "Please select a document");
     }
