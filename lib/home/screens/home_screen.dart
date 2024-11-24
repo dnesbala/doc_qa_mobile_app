@@ -37,6 +37,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _scrollController = ScrollController();
 
     _scrollController.addListener(() {
+      if (selectedFilePath == null) return;
       final isAtBottom = _scrollController.position.atEdge &&
           _scrollController.position.pixels ==
               _scrollController.position.maxScrollExtent;
@@ -86,11 +87,13 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: SingleChildScrollView(
                     controller: _scrollController,
                     child: Column(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         if (selectedFilePath == null) ...{
-                          SizedBox(
-                              height: MediaQuery.sizeOf(context).height * .25),
-                          _emptyChatUploadDocPlaceholder()
+                          Center(
+                            heightFactor: 2,
+                            child: _emptyChatUploadDocPlaceholder(),
+                          ),
                         } else
                           _fileUploadedInitialWidget(),
                       ],
