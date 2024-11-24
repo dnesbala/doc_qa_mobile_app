@@ -1,16 +1,44 @@
-# DOC QA Flutter App
+# Doc QA Flutter App
 
 Upload your document and ask any related questions to receive detailed and accurate answers.
 
-## Getting Started
+## Overview
 
-This project is a starting point for a Flutter application.
+This is a Flutter-based **Document Question-Answering App** where users can:
 
-A few resources to get you started if this is your first Flutter project:
+- Upload documents to analyze it. [Supported documents: .txt, .pdf, .docx]
+- Ask questions about uploaded documents to receive contextual answers.
+- View and manage multiple documents with associated Q&A histories.
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+## Running the Project
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+### Prerequisites
+
+- Install the [Flutter SDK](https://flutter.dev/docs/get-started/install).
+- Ensure a connected device or emulator is set up.
+
+### Project Setup
+
+1. Clone the repository:
+
+   ```bash
+   git clone https://github.com/dnesbala/doc_qa_mobile_app.git
+   cd doc_qa_mobile_app
+   ```
+
+2. Install dependencies:
+
+   ```bash
+   flutter pub get
+   ```
+
+3. For development mode:
+
+   ```bash
+   flutter run
+   ```
+
+4. For Building a Release APK:
+   ```bash
+   flutter build apk
+   ```
