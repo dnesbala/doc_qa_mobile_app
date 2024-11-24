@@ -268,7 +268,7 @@ class _HomeScreenState extends State<HomeScreen> {
       alignment: Alignment.centerRight,
       child: IntrinsicWidth(
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           margin: const EdgeInsets.symmetric(vertical: 16),
           alignment: Alignment.centerRight,
           decoration: BoxDecoration(
@@ -308,26 +308,55 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _docQaAnswerBox({required String answer}) {
+  Widget _docQaAnswerBox({
+    required String answer,
+    bool isLoading = false,
+  }) {
     return Align(
       alignment: Alignment.centerLeft,
       child: IntrinsicWidth(
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          margin: const EdgeInsets.symmetric(vertical: 8),
-          decoration: BoxDecoration(
-            color: Colors.grey.shade100,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Align(
-            alignment: Alignment.centerRight,
-            child: Text(
-              answer,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.lightTextColor,
-                  ),
+        child: Row(
+          children: [
+            const CircleAvatar(
+              radius: 24,
+              backgroundImage: AssetImage(AssetSource.docQaLogo),
             ),
-          ),
+            const SizedBox(width: 8),
+            isLoading
+                ? Lottie.asset(
+                    AssetSource.dotLoaderLottie,
+                    height: 16,
+                    delegates: LottieDelegates(
+                      values: [
+                        ValueDelegate.color(
+                          const ['**'],
+                          value: AppColors.primaryColor,
+                        ),
+                      ],
+                    ),
+                  )
+                : Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 4),
+                      margin: const EdgeInsets.symmetric(vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          answer,
+                          style:
+                              Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: AppColors.lightTextColor,
+                                  ),
+                        ),
+                      ),
+                    ),
+                  ),
+          ],
         ),
       ),
     );
