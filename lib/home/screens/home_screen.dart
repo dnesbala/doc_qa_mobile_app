@@ -357,7 +357,7 @@ class _HomeScreenState extends State<HomeScreen> {
         selectedFilePath = file.path;
       });
     } else {
-      showErrorToast(description: "No document selected");
+      showErrorToast(description: "Please select a document");
     }
   }
 
