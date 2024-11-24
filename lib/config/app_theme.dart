@@ -11,7 +11,7 @@ class AppThemes {
       brightness: Brightness.light,
     ),
     splashColor: Colors.pinkAccent.shade100,
-    textTheme: GoogleFonts.victorMonoTextTheme(
+    textTheme: GoogleFonts.lexendTextTheme(
       const TextTheme(
         displayLarge: TextStyle(
           fontSize: 32.0,

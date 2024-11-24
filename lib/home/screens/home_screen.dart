@@ -1,6 +1,11 @@
+import 'dart:io';
+
+import 'package:doc_qa_flutter_app/common/utils/toast_utils.dart';
 import 'package:doc_qa_flutter_app/config/constants/app_colors.dart';
 import 'package:doc_qa_flutter_app/config/constants/app_strings.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_pdfview/flutter_pdfview.dart';
 import 'package:lottie/lottie.dart';
 
 import 'package:doc_qa_flutter_app/common/widgets/custom_app_bar.dart';
@@ -18,6 +23,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   late final TextEditingController _promptTextController;
   int _currentInputLineCount = 1;
+  String? selectedFilePath;
 
   @override
   void initState() {
@@ -34,15 +40,25 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       body: Column(
         children: [
           CustomAppBar(
             title: AppStrings.appTitle,
             onMenuTap: () {},
           ),
-          const Spacer(),
-          _emptyChatUploadDocPlaceholder(),
-          const Spacer(),
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  if (selectedFilePath == null)
+                    _emptyChatUploadDocPlaceholder()
+                  else
+                    _fileUploadedInitialWidget(),
+                ],
+              ),
+            ),
+          ),
           _promptInputFieldWithUploadDoc(),
           const SizedBox(height: 16),
         ],
@@ -58,7 +74,9 @@ class _HomeScreenState extends State<HomeScreen> {
           style: Theme.of(context).textTheme.headlineSmall,
         ),
         GestureDetector(
-          onTap: () {},
+          onTap: () {
+            _uploadFile();
+          },
           child: Lottie.asset(
             AssetSource.uploadDocLottie,
             height: 200,
@@ -74,13 +92,63 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Widget _fileUploadedInitialWidget() {
+    return SidePadding(
+      child: Column(
+        children: [
+          const SizedBox(height: 16),
+          _userQuestionBox(prompt: "Uploaded Doc:", pdfView: true),
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 500),
+            transitionBuilder: (Widget child, Animation<double> animation) {
+              return FadeTransition(opacity: animation, child: child);
+            },
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: Colors.grey.shade200,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                child: Text("Ask something about the document..",
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodyMedium
+                        ?.copyWith(color: AppColors.lightTextColor)),
+              ),
+            ),
+          ),
+          _userQuestionBox(prompt: "test question here?", pdfView: false),
+          _docQaAnswerBox(answer: "lkorem ipsum test sajfk"),
+          _userQuestionBox(prompt: "test question here?", pdfView: false),
+          _docQaAnswerBox(
+              answer:
+                  "lkorem ipsum test sajfk lkorem ipsum test sajfk lkorem ipsum test sajfk lkorem ipsum test sajfk lkorem ipsum test sajfk lkorem ipsum test sajfk"),
+          _docQaAnswerBox(
+              answer:
+                  "lkorem ipsum test sajfk lkorem ipsum test sajfk lkorem ipsum test sajfk lkorem ipsum test sajfk lkorem ipsum test sajfk lkorem ipsum test sajfk"),
+          _docQaAnswerBox(
+              answer:
+                  "lkorem ipsum test sajfk lkorem ipsum test sajfk lkorem ipsum test sajfk lkorem ipsum test sajfk lkorem ipsum test sajfk lkorem ipsum test sajfk"),
+          _docQaAnswerBox(
+              answer:
+                  "lkorem ipsum test sajfk lkorem ipsum test sajfk lkorem ipsum test sajfk lkorem ipsum test sajfk lkorem ipsum test sajfk lkorem ipsum test sajfk"),
+          const SizedBox(height: 24),
+        ],
+      ),
+    );
+  }
+
   Widget _promptInputFieldWithUploadDoc() {
     return SidePadding(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           CustomInkWell(
-            onTap: () {},
+            onTap: () {
+              _uploadFile();
+            },
             tooltipMessage: "Upload Document",
             child: const Icon(Icons.upload_file_outlined),
           ),
@@ -131,6 +199,94 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
     );
+  }
+
+  Widget _userQuestionBox({
+    required String prompt,
+    bool pdfView = false,
+  }) {
+    return Align(
+      alignment: Alignment.centerRight,
+      child: IntrinsicWidth(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          margin: const EdgeInsets.symmetric(vertical: 16),
+          alignment: Alignment.centerRight,
+          decoration: BoxDecoration(
+            color: Colors.grey.shade100,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            children: [
+              Align(
+                alignment: Alignment.centerRight,
+                child: Text(prompt,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.primaryColor.withOpacity(0.8),
+                        )),
+              ),
+              if (pdfView) ...{
+                const SizedBox(height: 4),
+                SizedBox(
+                  height: 200,
+                  width: 200,
+                  child: PDFView(
+                    filePath: selectedFilePath,
+                    swipeHorizontal: true,
+                    autoSpacing: true,
+                    onError: (error) {
+                      showErrorToast(description: error);
+                    },
+                  ),
+                ),
+                const SizedBox(height: 8),
+              },
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _docQaAnswerBox({required String answer}) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: IntrinsicWidth(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          margin: const EdgeInsets.symmetric(vertical: 8),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade100,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Align(
+            alignment: Alignment.centerRight,
+            child: Text(
+              answer,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: AppColors.lightTextColor,
+                  ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _uploadFile() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf'],
+    );
+    if (result != null) {
+      File file = File(result.files.single.path!);
+      setState(() {
+        selectedFilePath = file.path;
+      });
+    } else {
+      showErrorToast(description: "No document selected");
+    }
   }
 
   void _updateLineCount(String text) {
