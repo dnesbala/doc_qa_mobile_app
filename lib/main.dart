@@ -1,6 +1,7 @@
 import 'package:doc_qa_flutter_app/config/app_theme.dart';
 import 'package:doc_qa_flutter_app/config/constants/app_strings.dart';
 import 'package:doc_qa_flutter_app/config/services/api_service.dart';
+import 'package:doc_qa_flutter_app/home/blocs/submit_prompt/submit_prompt_bloc.dart';
 import 'package:doc_qa_flutter_app/home/blocs/upload_doc/upload_doc_bloc.dart';
 import 'package:doc_qa_flutter_app/home/repos/home_repo.dart';
 import 'package:flutter/material.dart';
@@ -22,9 +23,17 @@ class MyApp extends StatelessWidget {
       child: MaterialApp(
         title: AppStrings.appTitle,
         theme: AppThemes.lightTheme,
-        home: BlocProvider(
-          create: (context) =>
-              UploadDocBloc(repo: HomeRepoImpl(apiService: ApiService())),
+        home: MultiBlocProvider(
+          providers: [
+            BlocProvider(
+              create: (context) =>
+                  UploadDocBloc(repo: HomeRepoImpl(apiService: ApiService())),
+            ),
+            BlocProvider(
+              create: (context) => SubmitPromptBloc(
+                  repo: HomeRepoImpl(apiService: ApiService())),
+            ),
+          ],
           child: const HomeScreen(),
         ),
         debugShowCheckedModeBanner: false,
