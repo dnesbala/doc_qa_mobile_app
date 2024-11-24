@@ -11,7 +11,7 @@ class ApiService {
   ApiService() {
     dio.options.baseUrl = baseUrl;
     dio.options.connectTimeout = const Duration(seconds: 20);
-    dio.options.receiveTimeout = const Duration(seconds: 10);
+    dio.options.receiveTimeout = const Duration(seconds: 20);
   }
 
   Future<Response> get(String endpoint,

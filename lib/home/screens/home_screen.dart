@@ -1,13 +1,6 @@
+// ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'dart:io';
 
-import 'package:doc_qa_flutter_app/common/extensions/list_extensions.dart';
-import 'package:doc_qa_flutter_app/common/utils/toast_utils.dart';
-import 'package:doc_qa_flutter_app/common/widgets/history_drawer.dart';
-import 'package:doc_qa_flutter_app/common/widgets/loader.dart';
-import 'package:doc_qa_flutter_app/config/constants/app_colors.dart';
-import 'package:doc_qa_flutter_app/config/constants/app_strings.dart';
-import 'package:doc_qa_flutter_app/home/blocs/submit_prompt/submit_prompt_bloc.dart';
-import 'package:doc_qa_flutter_app/home/blocs/upload_doc/upload_doc_bloc.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -15,13 +8,26 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_pdfview/flutter_pdfview.dart';
 import 'package:lottie/lottie.dart';
 
+import 'package:doc_qa_flutter_app/common/extensions/list_extensions.dart';
+import 'package:doc_qa_flutter_app/common/utils/toast_utils.dart';
 import 'package:doc_qa_flutter_app/common/widgets/custom_app_bar.dart';
 import 'package:doc_qa_flutter_app/common/widgets/custom_ink_well.dart';
+import 'package:doc_qa_flutter_app/common/widgets/history_drawer.dart';
+import 'package:doc_qa_flutter_app/common/widgets/loader.dart';
 import 'package:doc_qa_flutter_app/common/widgets/side_padding.dart';
+import 'package:doc_qa_flutter_app/config/constants/app_colors.dart';
+import 'package:doc_qa_flutter_app/config/constants/app_strings.dart';
 import 'package:doc_qa_flutter_app/config/constants/asset_source.dart';
+import 'package:doc_qa_flutter_app/home/blocs/submit_prompt/submit_prompt_bloc.dart';
+import 'package:doc_qa_flutter_app/home/blocs/upload_doc/upload_doc_bloc.dart';
+import 'package:doc_qa_flutter_app/home/services/home_shared_pref.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final Map<String, dynamic>? document;
+  const HomeScreen({
+    super.key,
+    this.document,
+  });
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -41,13 +47,31 @@ class _HomeScreenState extends State<HomeScreen> {
   List<(String, String)> questionAnswers = [];
   bool _isAnswerLoading = false;
 
+  List<Map<String, dynamic>> _localSavedDocuments = [];
+
   @override
   void initState() {
     _promptTextController = TextEditingController();
     _scrollController = ScrollController();
 
+    if (widget.document != null) {
+      documentId = widget.document!["id"];
+      selectedFilePath = widget.document!["path"];
+
+      questionAnswers = (widget.document!["question_answers"] as List<dynamic>)
+          .map((item) => (item["question"] as String, item["answer"] as String))
+          .toList();
+      setState(() {});
+    }
+
     _scrollController.addListener(() {
-      if (selectedFilePath == null) return;
+      if (selectedFilePath == null) {
+        setState(() {
+          _showScrollToBottomButton = false;
+        });
+        return;
+      }
+
       final isAtBottom = _scrollController.position.atEdge &&
           _scrollController.position.pixels ==
               _scrollController.position.maxScrollExtent;
@@ -65,6 +89,12 @@ class _HomeScreenState extends State<HomeScreen> {
     _promptTextController.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  Future<void> _fetchLocalSavedDocuments() async {
+    final docs = await HomeSharedPref.getDocuments();
+    _localSavedDocuments = docs;
+    setState(() {});
   }
 
   void _scrollToBottom() {
@@ -87,97 +117,108 @@ class _HomeScreenState extends State<HomeScreen> {
         if (didPop) return;
         _tapAgainToExitApp();
       },
-      child: Scaffold(
-        resizeToAvoidBottomInset: true,
-        drawer: const HistoryDrawer(
-          history: [],
-        ),
-        body: Stack(
-          children: [
-            Column(
-              children: [
-                Builder(
-                  builder: (context) {
-                    return CustomAppBar(
-                      title: AppStrings.appTitle,
-                      onMenuTap: () {
-                        Scaffold.of(context).openDrawer();
-                      },
-                    );
-                  },
-                ),
-                BlocListener<SubmitPromptBloc, SubmitPromptState>(
-                  listener: (context, state) {
-                    if (state is SubmitPromptInProgress) {
-                      _isAnswerLoading = true;
-                      setState(() {});
-                    } else if (state is SubmitPromptSuccess) {
-                      _isAnswerLoading = false;
-                      updateAnswer(state.answer.details?.question ?? "",
-                          state.answer.details?.answer ?? "");
-                      setState(() {});
-                      _scrollToBottom();
-                    } else if (state is SubmitPromptFailure) {
-                      _isAnswerLoading = false;
-                      updateAnswer(questionAnswers.last.$1, state.errorMessage);
-                      showErrorToast(description: state.errorMessage);
-                      setState(() {});
-                    }
-                  },
-                  child: BlocConsumer<UploadDocBloc, UploadDocState>(
-                      listener: (context, state) {
-                    if (state is UploadDocSuccess) {
-                      documentId = state.response.details?.id;
-                      questionAnswers.clear();
-                    } else if (state is UploadDocFailure) {
-                      showErrorToast(description: state.errorMessage);
-                    }
-                  }, builder: (context, state) {
-                    if (state is UploadDocInProgress) {
-                      return const Expanded(
-                        child: Loader(),
+      child: GestureDetector(
+        onVerticalDragDown: (_) {
+          FocusManager.instance.primaryFocus?.unfocus();
+        },
+        child: Scaffold(
+          resizeToAvoidBottomInset: true,
+          drawer: HistoryDrawer(
+            documents: _localSavedDocuments,
+          ),
+          body: Stack(
+            children: [
+              Column(
+                children: [
+                  Builder(
+                    builder: (context) {
+                      return CustomAppBar(
+                        title: AppStrings.appTitle,
+                        onMenuTap: () {
+                          _fetchLocalSavedDocuments();
+                          Scaffold.of(context).openDrawer();
+                        },
                       );
-                    } else if (state is UploadDocSuccess) {
-                      return Expanded(
-                        child: Column(
-                          children: [
-                            Expanded(
-                              child: SingleChildScrollView(
-                                controller: _scrollController,
-                                child: _fileUploadedInitialWidget(),
+                    },
+                  ),
+                  BlocListener<SubmitPromptBloc, SubmitPromptState>(
+                    listener: (context, state) {
+                      if (state is SubmitPromptInProgress) {
+                        _isAnswerLoading = true;
+                        setState(() {});
+                      } else if (state is SubmitPromptSuccess) {
+                        _isAnswerLoading = false;
+                        updateAnswer(state.answer.details?.question ?? "",
+                            state.answer.details?.answer ?? "");
+                        _saveDocumentToSharedPref();
+                        setState(() {});
+                        _scrollToBottom();
+                      } else if (state is SubmitPromptFailure) {
+                        _isAnswerLoading = false;
+                        updateAnswer(
+                            questionAnswers.last.$1, state.errorMessage);
+                        _saveDocumentToSharedPref();
+                        showErrorToast(description: state.errorMessage);
+                        setState(() {});
+                      }
+                    },
+                    child: BlocConsumer<UploadDocBloc, UploadDocState>(
+                        listener: (context, state) {
+                      if (state is UploadDocSuccess) {
+                        documentId = state.response.details?.id;
+                        questionAnswers.clear();
+                        _fetchLocalSavedDocuments();
+                      } else if (state is UploadDocFailure) {
+                        showErrorToast(description: state.errorMessage);
+                      }
+                    }, builder: (context, state) {
+                      if (state is UploadDocInProgress) {
+                        return const Expanded(
+                          child: Loader(),
+                        );
+                      } else if (state is UploadDocSuccess ||
+                          widget.document != null) {
+                        return Expanded(
+                          child: Column(
+                            children: [
+                              Expanded(
+                                child: SingleChildScrollView(
+                                  controller: _scrollController,
+                                  child: _fileUploadedInitialWidget(),
+                                ),
                               ),
-                            ),
-                            if (selectedFilePath != null)
-                              _promptInputFieldWithUploadDoc(),
-                            const SizedBox(height: 16),
-                          ],
-                        ),
+                              if (selectedFilePath != null)
+                                _promptInputFieldWithUploadDoc(),
+                              const SizedBox(height: 16),
+                            ],
+                          ),
+                        );
+                      }
+                      return Center(
+                        heightFactor: 3,
+                        child: _emptyChatUploadDocPlaceholder(),
                       );
-                    }
-                    return Center(
-                      heightFactor: 3,
-                      child: _emptyChatUploadDocPlaceholder(),
-                    );
-                  }),
-                ),
-              ],
-            ),
-            if (_showScrollToBottomButton)
-              Positioned(
-                bottom: _currentInputLineCount == 1
-                    ? 80
-                    : _currentInputLineCount * 32,
-                right: 16,
-                child: FloatingActionButton(
-                  onPressed: _scrollToBottom,
-                  mini: true,
-                  tooltip: "Scroll to bottom",
-                  backgroundColor: AppColors.primaryColor.withOpacity(0.5),
-                  child: const Icon(Icons.arrow_downward_outlined,
-                      color: Colors.white),
-                ),
+                    }),
+                  ),
+                ],
               ),
-          ],
+              if (_showScrollToBottomButton)
+                Positioned(
+                  bottom: _currentInputLineCount == 1
+                      ? 80
+                      : _currentInputLineCount * 32,
+                  right: 16,
+                  child: FloatingActionButton(
+                    onPressed: _scrollToBottom,
+                    mini: true,
+                    tooltip: "Scroll to bottom",
+                    backgroundColor: AppColors.primaryColor.withOpacity(0.5),
+                    child: const Icon(Icons.arrow_downward_outlined,
+                        color: Colors.white),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -461,6 +502,17 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  void _saveDocumentToSharedPref() {
+    final List<Map<String, String>> formattedQuestionAnswers = questionAnswers
+        .map((tuple) => {"question": tuple.$1, "answer": tuple.$2})
+        .toList();
+    HomeSharedPref.saveDocument({
+      "id": documentId,
+      "path": selectedFilePath,
+      "question_answers": formattedQuestionAnswers,
+    });
+  }
+
   void _tapAgainToExitApp() {
     if (_backPressDateTime == null ||
         DateTime.now().difference(_backPressDateTime!).inSeconds > 3) {
@@ -488,20 +540,24 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _uploadFile() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['pdf', 'txt'],
-    );
-    if (result != null) {
-      File file = File(result.files.single.path!);
-      setState(() {
-        selectedFilePath = file.path;
-      });
-      context
-          .read<UploadDocBloc>()
-          .add(StartUploadDocument(docPath: selectedFilePath!));
-    } else {
-      showErrorToast(description: "Please select a document");
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'txt'],
+      );
+      if (result != null) {
+        File file = File(result.files.single.path!);
+        setState(() {
+          selectedFilePath = file.path;
+        });
+        context
+            .read<UploadDocBloc>()
+            .add(StartUploadDocument(docPath: selectedFilePath!));
+      } else {
+        showErrorToast(description: "Please select a document");
+      }
+    } on PlatformException catch (err) {
+      showErrorToast(description: err.message);
     }
   }
 
