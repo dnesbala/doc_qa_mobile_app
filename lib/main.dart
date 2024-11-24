@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:toastification/toastification.dart';
+
+import 'package:doc_qa_flutter_app/config/constants/app_colors.dart';
+import 'package:doc_qa_flutter_app/home/screens/home_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -9,22 +13,16 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Doc QA',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.pink),
-        useMaterial3: true,
+    return ToastificationWrapper(
+      child: MaterialApp(
+        title: 'Doc QA',
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primaryColor),
+          useMaterial3: true,
+          splashColor: Colors.pinkAccent.shade100,
+        ),
+        home: const HomeScreen(),
       ),
-      home: const HomeScreen(),
     );
-  }
-}
-
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Placeholder();
   }
 }
