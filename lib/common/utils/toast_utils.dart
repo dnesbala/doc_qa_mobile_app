@@ -6,12 +6,14 @@ class ToastMessage {
   final String? description;
   final ToastificationType type;
   final Color primaryColor;
+  final Duration? autoCloseDuration;
 
   ToastMessage({
     this.title,
     this.description,
     required this.type,
     required this.primaryColor,
+    this.autoCloseDuration,
   });
 
   void show() {
@@ -19,7 +21,7 @@ class ToastMessage {
       title: title == null ? null : Text(title!),
       description: description == null ? null : Text(description!),
       type: type,
-      autoCloseDuration: const Duration(seconds: 3),
+      autoCloseDuration: autoCloseDuration ?? const Duration(seconds: 3),
       primaryColor: primaryColor,
       showProgressBar: false,
       dragToClose: true,
@@ -28,12 +30,17 @@ class ToastMessage {
   }
 }
 
-void showSuccessToast({String? title, String? description}) {
+void showSuccessToast({
+  String? title,
+  String? description,
+  Duration? autoCloseDuration,
+}) {
   final toast = ToastMessage(
     title: title,
     description: description,
     type: ToastificationType.success,
     primaryColor: Colors.teal,
+    autoCloseDuration: autoCloseDuration,
   );
   toast.show();
 }

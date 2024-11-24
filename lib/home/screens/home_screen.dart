@@ -5,6 +5,7 @@ import 'package:doc_qa_flutter_app/config/constants/app_colors.dart';
 import 'package:doc_qa_flutter_app/config/constants/app_strings.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_pdfview/flutter_pdfview.dart';
 import 'package:lottie/lottie.dart';
 
@@ -27,6 +28,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   late final ScrollController _scrollController;
   bool _showScrollToBottomButton = false;
+
+  DateTime? _backPressDateTime;
 
   @override
   void initState() {
@@ -63,51 +66,58 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      resizeToAvoidBottomInset: true,
-      body: Stack(
-        children: [
-          Column(
-            children: [
-              CustomAppBar(
-                title: AppStrings.appTitle,
-                onMenuTap: () {},
-              ),
-              Expanded(
-                child: SingleChildScrollView(
-                  controller: _scrollController,
-                  child: Column(
-                    children: [
-                      if (selectedFilePath == null) ...{
-                        SizedBox(
-                            height: MediaQuery.sizeOf(context).height * .25),
-                        _emptyChatUploadDocPlaceholder()
-                      } else
-                        _fileUploadedInitialWidget(),
-                    ],
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (bool didPop) {
+        if (didPop) return;
+        _tapAgainToExitApp();
+      },
+      child: Scaffold(
+        resizeToAvoidBottomInset: true,
+        body: Stack(
+          children: [
+            Column(
+              children: [
+                CustomAppBar(
+                  title: AppStrings.appTitle,
+                  onMenuTap: () {},
+                ),
+                Expanded(
+                  child: SingleChildScrollView(
+                    controller: _scrollController,
+                    child: Column(
+                      children: [
+                        if (selectedFilePath == null) ...{
+                          SizedBox(
+                              height: MediaQuery.sizeOf(context).height * .25),
+                          _emptyChatUploadDocPlaceholder()
+                        } else
+                          _fileUploadedInitialWidget(),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              _promptInputFieldWithUploadDoc(),
-              const SizedBox(height: 16),
-            ],
-          ),
-          if (_showScrollToBottomButton)
-            Positioned(
-              bottom: _currentInputLineCount == 1
-                  ? 80
-                  : _currentInputLineCount * 32,
-              right: 16,
-              child: FloatingActionButton(
-                onPressed: _scrollToBottom,
-                mini: true,
-                tooltip: "Scroll to bottom",
-                backgroundColor: AppColors.primaryColor.withOpacity(0.5),
-                child: const Icon(Icons.arrow_downward_outlined,
-                    color: Colors.white),
-              ),
+                _promptInputFieldWithUploadDoc(),
+                const SizedBox(height: 16),
+              ],
             ),
-        ],
+            if (_showScrollToBottomButton)
+              Positioned(
+                bottom: _currentInputLineCount == 1
+                    ? 80
+                    : _currentInputLineCount * 32,
+                right: 16,
+                child: FloatingActionButton(
+                  onPressed: _scrollToBottom,
+                  mini: true,
+                  tooltip: "Scroll to bottom",
+                  backgroundColor: AppColors.primaryColor.withOpacity(0.5),
+                  child: const Icon(Icons.arrow_downward_outlined,
+                      color: Colors.white),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -318,6 +328,19 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     );
+  }
+
+  void _tapAgainToExitApp() {
+    if (_backPressDateTime == null ||
+        DateTime.now().difference(_backPressDateTime!).inSeconds > 3) {
+      _backPressDateTime = DateTime.now();
+      showSuccessToast(
+        title: "Tap again to exit..",
+        autoCloseDuration: const Duration(seconds: 2),
+      );
+    } else {
+      SystemNavigator.pop();
+    }
   }
 
   Future<void> _uploadFile() async {
