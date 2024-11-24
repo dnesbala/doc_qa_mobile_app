@@ -1,3 +1,5 @@
+import 'package:doc_qa_flutter_app/config/constants/app_colors.dart';
+import 'package:doc_qa_flutter_app/config/constants/app_strings.dart';
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 
@@ -31,21 +33,19 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Scaffold(
-        body: Column(
-          children: [
-            CustomAppBar(
-              title: "DocCur",
-              onMenuTap: () {},
-            ),
-            const Spacer(),
-            _emptyChatUploadDocPlaceholder(),
-            const Spacer(),
-            _promptInputFieldWithUploadDoc(),
-            const SizedBox(height: 16),
-          ],
-        ),
+    return Scaffold(
+      body: Column(
+        children: [
+          CustomAppBar(
+            title: AppStrings.appTitle,
+            onMenuTap: () {},
+          ),
+          const Spacer(),
+          _emptyChatUploadDocPlaceholder(),
+          const Spacer(),
+          _promptInputFieldWithUploadDoc(),
+          const SizedBox(height: 16),
+        ],
       ),
     );
   }
@@ -53,7 +53,10 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _emptyChatUploadDocPlaceholder() {
     return Column(
       children: [
-        Text("Upload Document"),
+        Text(
+          "Upload Document",
+          style: Theme.of(context).textTheme.headlineSmall,
+        ),
         GestureDetector(
           onTap: () {},
           child: Lottie.asset(
@@ -63,7 +66,10 @@ class _HomeScreenState extends State<HomeScreen> {
             fit: BoxFit.cover,
           ),
         ),
-        Text("to get started"),
+        Text(
+          "to get started",
+          style: Theme.of(context).textTheme.titleLarge,
+        ),
       ],
     );
   }
@@ -99,7 +105,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   borderRadius: BorderRadius.circular(32),
                   borderSide: const BorderSide(color: Colors.transparent),
                 ),
-                hintText: "Ask DocCur",
+                hintText: "Ask ${AppStrings.appTitle}",
+                hintStyle: Theme.of(context).textTheme.titleMedium,
               ),
             ),
           ),

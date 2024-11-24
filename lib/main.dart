@@ -1,3 +1,5 @@
+import 'package:doc_qa_flutter_app/config/app_theme.dart';
+import 'package:doc_qa_flutter_app/config/constants/app_strings.dart';
 import 'package:flutter/material.dart';
 import 'package:toastification/toastification.dart';
 
@@ -15,13 +17,10 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return ToastificationWrapper(
       child: MaterialApp(
-        title: 'Doc QA',
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primaryColor),
-          useMaterial3: true,
-          splashColor: Colors.pinkAccent.shade100,
-        ),
+        title: AppStrings.appTitle,
+        theme: AppThemes.lightTheme,
         home: const HomeScreen(),
+        debugShowCheckedModeBanner: false,
       ),
     );
   }
