@@ -119,6 +119,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       _scrollToBottom();
                     } else if (state is SubmitPromptFailure) {
                       _isAnswerLoading = false;
+                      updateAnswer(questionAnswers.last.$1, state.errorMessage);
+                      showErrorToast(description: state.errorMessage);
                       setState(() {});
                     }
                   },
