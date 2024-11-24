@@ -91,7 +91,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       children: [
                         if (selectedFilePath == null) ...{
                           Center(
-                            heightFactor: 2,
+                            heightFactor: 3,
                             child: _emptyChatUploadDocPlaceholder(),
                           ),
                         } else
@@ -100,7 +100,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                 ),
-                _promptInputFieldWithUploadDoc(),
+                if (selectedFilePath != null) _promptInputFieldWithUploadDoc(),
                 const SizedBox(height: 16),
               ],
             ),

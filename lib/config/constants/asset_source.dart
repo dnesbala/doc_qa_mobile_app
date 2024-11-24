@@ -4,5 +4,6 @@ class AssetSource {
   static const String dotLoaderLottie = "assets/lotties/dot_loader.json";
 
   // Images
+  static const String menuIcon = "assets/images/menu_icon.svg";
   static const String docQaLogo = "assets/images/doc_qa_logo.png";
 }

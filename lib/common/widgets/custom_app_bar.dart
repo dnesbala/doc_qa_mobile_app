@@ -1,4 +1,6 @@
+import 'package:doc_qa_flutter_app/config/constants/asset_source.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
@@ -46,7 +48,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
         ),
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.menu, color: Colors.white),
+          icon: SvgPicture.asset(AssetSource.menuIcon, color: Colors.white),
           onPressed: onMenuTap,
         ),
         actions: actions,
