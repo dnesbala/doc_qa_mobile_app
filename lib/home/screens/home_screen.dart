@@ -543,7 +543,7 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       FilePickerResult? result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
-        allowedExtensions: ['pdf', 'txt'],
+        allowedExtensions: ['pdf', 'txt', 'docx'],
       );
       if (result != null) {
         File file = File(result.files.single.path!);
