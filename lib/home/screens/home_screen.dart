@@ -213,8 +213,9 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           const SizedBox(height: 16),
           _userQuestionBox(
-              prompt: "Uploaded Doc ✅",
-              pdfView: selectedFilePath?.endsWith(".pdf") ?? false),
+            prompt: "Uploaded Doc ✅",
+            filePreview: selectedFilePath,
+          ),
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 500),
             transitionBuilder: (Widget child, Animation<double> animation) {
@@ -319,7 +320,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ));
                             addQuestion(_promptTextController.text);
                             _promptTextController.clear();
+                            _currentInputLineCount = 1;
                             _scrollToBottom();
+                            setState(() {});
                           }
                         },
                         tooltipMessage: "Submit Prompt",
@@ -336,7 +339,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _userQuestionBox({
     required String prompt,
-    bool pdfView = false,
+    String? filePreview,
   }) {
     return Align(
       alignment: Alignment.centerRight,
@@ -359,20 +362,40 @@ class _HomeScreenState extends State<HomeScreen> {
                           color: AppColors.primaryColor.withOpacity(0.8),
                         )),
               ),
-              if (pdfView) ...{
+              if (filePreview != null && filePreview.isNotEmpty) ...{
                 const SizedBox(height: 4),
-                SizedBox(
-                  height: 200,
-                  width: 200,
-                  child: PDFView(
-                    filePath: selectedFilePath,
-                    swipeHorizontal: true,
-                    autoSpacing: true,
-                    onError: (error) {
-                      showErrorToast(description: error);
-                    },
+                if (filePreview.endsWith(".pdf"))
+                  SizedBox(
+                    height: 200,
+                    width: 200,
+                    child: PDFView(
+                      filePath: selectedFilePath,
+                      swipeHorizontal: true,
+                      autoSpacing: true,
+                      onError: (error) {
+                        showErrorToast(description: error);
+                      },
+                    ),
+                  )
+                else
+                  Container(
+                    margin: const EdgeInsets.only(top: 16),
+                    alignment: Alignment.center,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        const Icon(Icons.file_copy_outlined),
+                        const SizedBox(width: 8),
+                        Text(
+                          filePreview.split("/").last,
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
+                              ?.copyWith(color: AppColors.lightTextColor),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
                 const SizedBox(height: 8),
               },
             ],
