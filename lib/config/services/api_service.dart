@@ -82,7 +82,9 @@ class ApiService {
 
   Future<Response> _handleError(dynamic error) async {
     if (error is DioException) {
-      final errorMessage = error.response?.data["message"];
+      final errorMessage = error.response != null && error.response?.data != ""
+          ? error.response?.data["message"]
+          : null;
       switch (error.type) {
         case DioExceptionType.connectionTimeout:
           throw Exception(errorMessage ?? "Connection Timeout");

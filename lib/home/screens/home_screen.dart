@@ -126,6 +126,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       listener: (context, state) {
                     if (state is UploadDocSuccess) {
                       documentId = state.response.details?.id;
+                      questionAnswers.clear();
                     } else if (state is UploadDocFailure) {
                       showErrorToast(description: state.errorMessage);
                     }
@@ -150,7 +151,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ],
                         ),
                       );
-                    } else if (state is UploadDocFailure) {}
+                    }
                     return Center(
                       heightFactor: 3,
                       child: _emptyChatUploadDocPlaceholder(),
